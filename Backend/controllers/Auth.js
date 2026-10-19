@@ -3,9 +3,12 @@ import User from "../models/user.js"
 import OTP from "../models/OTP.js"
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import otpGenerator from "otp-generator";
+import { passwordUpdated } from "../utils/mailTemplate/passwordChange.js";
+import mailSender from "../utils/mailSender.js";
 
 
-exports.Signup= async (req, res)=>{
+export const Signup= async (req, res)=>{
 
 try{
 // Destructure fields from the request body
@@ -88,7 +91,7 @@ return res.status(501).json({
 
 
 
-exports.login= async (req, res)=>{
+export const login= async (req, res)=>{
 
     try{
         //Destructure all the details
@@ -166,6 +169,127 @@ console.error(error);
 }
 
 
+export const otp= async (req, res)=>{
+
+    try{
+        //extract value
+        const {email}= req.body;
+if(!email){
+    return res.status(403).json({
+        success:false,
+        message:"Email filed can not be empty."
+    })
+}
+        //find user provided email
+        const checkUserPresent= await User.findOne({email})
+if(checkUserPresent){
+
+    res.status(403).json({
+        success:false,
+        message:"You are already registered User"
+    })
+}
+
+const otp= otpGenerator.generate(6,{
+    upperCaseAlphabets:false,
+    lowerCaseAlphabets:false,
+    specialChars:false
+})
+
+const otpbody= OTP.create({email,otp});
+console.log(otp);
+return res.status(201).json({
+    success:true,
+    message:"Otp send Successfully",
+    otp
+})
+
+    }
+
+    catch(error){
+console.log(error.message);
+		return res.status(500).json({ success: false, error: error.message });
+
+
+    }
 
 
 
+}
+
+
+// Controller for Changing Password
+
+export const changePassword= async(req, res)=>{
+    try{
+//find uer details
+const userDetails= await User.findById(req.user.id);
+
+//Destructure oldpassword, currentpassword, confirmpassword
+
+const {oldPassword,newPassword,confirmPassword}= req.body;
+
+//validate old password
+const isPasswordMatch= await bcrypt.compare(oldPassword,userDetails.password);
+
+if(!isPasswordMatch){
+
+    return res.status(401).json({
+        success:false,
+        message:"The password is incorrect"
+    })
+}
+// Match new password and confirm new password
+if(newPassword!==confirmPassword){
+    return res.status(401).json({
+        success:false,
+        message:"Password and confirm password does not match"
+    })
+}
+
+//updatePassword
+const encryptedPassword= await bcrypt.hash(newPassword,10);
+const updatedUserDetails= await User.findByIdAndUpdate(
+    req.user.id,
+    {password:encryptedPassword},
+    {new: true}
+
+)
+
+//Send notification Email
+
+try{
+const emailResponse= await mailSender(
+    updatedUserDetails.email,
+    passwordUpdated(updatedUserDetails.email,`Password updated successfully for ${updatedUserDetails.firstName} ${updatedUserDetails.lastName}`)
+)
+console.log("Email sent successfully:", emailResponse.response);
+}
+catch(error){
+
+console.error("Error occurred while sending email:", error);
+			return res.status(500).json({
+				success: false,
+				message: "Error occurred while sending email",
+				error: error.message,
+			});
+
+}
+
+// Return success response
+		return res.status(200).json(
+            { success: true, message: "Password updated successfully" });
+
+
+
+    }
+
+    catch(error){
+        console.error("Error occurred while changing password:", error);
+			return res.status(500).json({
+				success: false,
+				message: "Error occurred while changing Password",
+				error: error.message,
+			});
+    }
+}
