@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const CATEGORIES = ["Sticker Illustrations", "Canvas Paintings", "Sketches"];
+export const CATEGORIES = ["Sticker", "Illustrations", "Canvas Paintings", "Sketches"];
 
 const artworkSchema= new mongoose.Schema({
 
@@ -27,6 +27,12 @@ title: { type: String,
         required: true 
     
     },
+
+imagePublicId:
+ { 
+     type: String, required: true
+ },
+
      
     artist: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +45,6 @@ title: { type: String,
 
 
     
-})
+}, { timestamps: true })
 
 export default mongoose.model("Artwork", artworkSchema);

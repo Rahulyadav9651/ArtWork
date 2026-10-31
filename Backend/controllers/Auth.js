@@ -169,7 +169,7 @@ console.error(error);
 }
 
 
-export const otp= async (req, res)=>{
+export const sendOtp= async (req, res)=>{
 
     try{
         //extract value
