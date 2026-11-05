@@ -45,12 +45,12 @@ console.log("SENDOTP API ERROR............", error)
 
 export function Signup(firstName, lastName, email, password, confirmPassword, otp, navigate){
 
-    return async()=>{
+    return async(dispatch)=>{
 const toastId= toast.loading(<ImSpinner9/>)
 dispatch(setLoading(false));
 
 try{
-    const response = await apiConnector("POST", SEND_OTP_API,{
+    const response = await apiConnector("POST", SIGNUP_API,{
         firstName,
         lastName,
         email,
@@ -80,6 +80,10 @@ toast.dismiss(toastId);
 
 
 }
+
+
+
+
 
 
 

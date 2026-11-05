@@ -1,33 +1,40 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import {
-  Palette,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
-import { toast } from "react-hot-toast";
+import React, { useEffect, useState } from "react";
+import { Pencil, Save, X } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import { updateProfile } from "../../services/opertions/profileAPI";
 
-// Update this import if your authAPI uses a different export name.
-import { login } from "../../services/opertions/authAPI";
-
-const Login = () => {
-  const navigate = useNavigate();
+const PersonalDetails = () => {
+  const { user } = useSelector((state) => state.profile);
   const dispatch = useDispatch();
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { email, password } = formData;
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    gender: "",
+    dateOfBirth: "",
+    contactNumber: "",
+    about: "",
+  });
+
+  // Populate form with existing user details
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        gender: user.additionalDetails?.gender || "",
+        dateOfBirth: user.additionalDetails?.dateOfBirth || "",
+        contactNumber: user.additionalDetails?.contactNumber || "",
+        about: user.additionalDetails?.about || "",
+      });
+    }
+  }, [user]);
 
   const changeHandler = (e) => {
     setFormData((prev) => ({
@@ -36,234 +43,159 @@ const Login = () => {
     }));
   };
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-
-    if (!email.trim() || !password.trim()) {
-      toast.error("Please fill in all fields");
+  const handleSave = async () => {
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      toast.error("First name and last name are required");
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
-      await dispatch(login(email, password, navigate));
+      await dispatch(updateProfile(formData));
+      setIsEditing(false);
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Unable to login. Please try again.");
+      console.error("Profile update error:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    setFormData({
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      gender: user?.additionalDetails?.gender || "",
+      dateOfBirth: user?.additionalDetails?.dateOfBirth || "",
+      contactNumber: user?.additionalDetails?.contactNumber || "",
+      about: user?.additionalDetails?.about || "",
+    });
+
+    setIsEditing(false);
+  };
+
+  const fields = [
+    { label: "First Name", name: "firstName" },
+    { label: "Last Name", name: "lastName" },
+    { label: "Email Address", name: "email", disabled: true },
+    { label: "Phone Number", name: "contactNumber" },
+    { label: "Date of Birth", name: "dateOfBirth", type: "date" },
+    {
+      label: "Gender",
+      name: "gender",
+      type: "select",
+      options: ["Male", "Female", "Other", "Prefer not to say"],
+    },
+  ];
+
+  const inputClass =
+    "mt-2 w-full rounded-lg border border-[#51445F] bg-[#211C2D] px-4 py-3 text-sm text-[#F4EAF7] outline-none focus:border-[#B89ACB]";
+
   return (
-    <div className="min-h-screen w-full bg-[#faf8f4] lg:flex">
-      {/* Left Section */}
-      <div className="relative hidden min-h-screen w-5/12 flex-col justify-between overflow-hidden bg-[#f5eee5] p-10 lg:flex xl:p-14">
-        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#e9c9a9]/30 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-[#d65f27]/10 blur-3xl" />
+    <div className="mt-6 rounded-2xl border border-[#51445F] bg-[#30283E] p-5 sm:p-6">
 
-        {/* Logo */}
-        <Link to="/" className="relative z-10 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#d65f27] text-white">
-            <Palette size={25} />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-bold text-[#F4EAF7]">
+          Personal Details
+        </h2>
+
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-[#B89ACB] transition hover:bg-white/10"
+          >
+            <Pencil size={15} />
+            Edit
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#D9A3B4] hover:bg-white/10"
+            >
+              <X size={15} />
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={loading}
+              className="flex items-center gap-2 rounded-lg bg-[#B89ACB] px-4 py-2 text-sm font-semibold text-[#211C2D] hover:bg-[#CDB4DD] disabled:opacity-50"
+            >
+              <Save size={15} />
+              {loading ? "Saving..." : "Save"}
+            </button>
           </div>
-          <span className="text-2xl font-bold tracking-tight text-[#302820]">
-            Artify
-          </span>
-        </Link>
-
-        {/* Illustration */}
-        <div className="relative z-10 mx-auto my-10 w-full max-w-md">
-          <div className="absolute -left-5 top-8 h-20 w-20 rounded-2xl bg-white/70 shadow-lg" />
-          <div className="absolute -right-4 bottom-12 h-24 w-24 rounded-full bg-[#e8b18e]/40" />
-
-          <img
-            src="/images/painting.png"
-            alt="Creative painting supplies"
-            className="relative z-10 mx-auto max-h-[390px] w-full rounded-3xl object-contain"
-          />
-
-          <div className="absolute -bottom-5 left-1/2 z-20 w-[85%] -translate-x-1/2 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-xl backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff0e8] text-[#d65f27]">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <p className="font-semibold text-[#302820]">
-                  Creativity starts here
-                </p>
-                <p className="text-xs text-stone-500">
-                  Make something beautiful today.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Text */}
-        <div className="relative z-10 max-w-md">
-          <h1 className="text-4xl font-bold leading-tight text-[#302820] xl:text-5xl">
-            Welcome back to
-            <span className="text-[#d65f27]"> Artify.</span>
-          </h1>
-          <p className="mt-5 text-base leading-7 text-stone-600">
-            Your creative journey continues here. Sign in and bring your
-            imagination to life.
-          </p>
-
-          <div className="mt-8 flex gap-2">
-            <span className="h-1.5 w-8 rounded-full bg-[#d65f27]" />
-            <span className="h-1.5 w-3 rounded-full bg-[#d8c6b6]" />
-            <span className="h-1.5 w-3 rounded-full bg-[#d8c6b6]" />
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Right Section */}
-      <div className="flex min-h-screen w-full items-center justify-center px-5 py-10 sm:px-10 lg:w-7/12 lg:px-12">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <Link
-            to="/"
-            className="mb-10 flex items-center justify-center gap-3 lg:hidden"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#d65f27] text-white">
-              <Palette size={25} />
-            </div>
-            <span className="text-2xl font-bold text-[#302820]">Artify</span>
-          </Link>
+      {/* Form Fields */}
+      <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+        {fields.map((field) => (
+          <div key={field.name}>
+            <label className="text-sm text-[#B8A9C6]">
+              {field.label}
+            </label>
 
-          <div className="rounded-3xl border border-[#eee6dd] bg-white p-6 shadow-[0_15px_50px_rgba(70,45,25,0.06)] sm:p-10">
-            <div className="mb-8">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#d65f27]">
-                Welcome back
-              </p>
-
-              <h2 className="text-3xl font-bold text-[#302820] sm:text-4xl">
-                Sign in to your account
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-stone-500">
-                Enter your details below to access your Artify account.
-              </p>
-            </div>
-
-            <form onSubmit={submitHandler} className="space-y-6">
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-semibold text-[#40372f]"
+            {isEditing && !field.disabled ? (
+              field.type === "select" ? (
+                <select
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={changeHandler}
+                  className={inputClass}
                 >
-                  Email Address
-                </label>
-
-                <div className="relative">
-                  <Mail
-                    size={19}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"
-                  />
-
-                  <input
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={email}
-                    onChange={changeHandler}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                    required
-                    className="w-full rounded-xl border border-[#e8dfd6] bg-[#fdfcfb] py-3.5 pl-12 pr-4 text-sm text-[#302820] outline-none transition placeholder:text-stone-400 focus:border-[#d65f27] focus:ring-4 focus:ring-[#d65f27]/10"
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-[#40372f]"
-                  >
-                    Password
-                  </label>
-
-                  <Link
-                    to="/forgot-password"
-                    className="text-xs font-semibold text-[#d65f27] transition hover:text-[#a94318]"
-                  >
-                    Forgot Password?
-                  </Link>
-                </div>
-
-                <div className="relative">
-                  <Lock
-                    size={19}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"
-                  />
-
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={password}
-                    onChange={changeHandler}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    required
-                    className="w-full rounded-xl border border-[#e8dfd6] bg-[#fdfcfb] py-3.5 pl-12 pr-12 text-sm text-[#302820] outline-none transition placeholder:text-stone-400 focus:border-[#d65f27] focus:ring-4 focus:ring-[#d65f27]/10"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 transition hover:text-[#d65f27]"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff size={19} />
-                    ) : (
-                      <Eye size={19} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Login Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#d65f27] py-3.5 font-semibold text-white shadow-lg shadow-[#d65f27]/20 transition duration-200 hover:-translate-y-0.5 hover:bg-[#bd4e1e] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Signing in..." : "Login to Account"}
-                {!loading && <ArrowRight size={19} />}
-              </button>
-            </form>
-
-            <div className="my-7 flex items-center gap-4">
-              <div className="h-px flex-1 bg-[#eee6dd]" />
-              <span className="text-xs text-stone-400">NEW TO ARTIFY?</span>
-              <div className="h-px flex-1 bg-[#eee6dd]" />
-            </div>
-
-            <p className="text-center text-sm text-stone-600">
-              Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="font-bold text-[#d65f27] transition hover:text-[#a94318]"
-              >
-                Create Account
-              </Link>
-            </p>
+                  <option value="">Select {field.label}</option>
+                  {field.options.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={field.type || "text"}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={changeHandler}
+                  className={inputClass}
+                />
+              )
+            ) : (
+              <p className="mt-2 text-sm font-medium text-[#F4EAF7]">
+                {formData[field.name] || "Not provided"}
+              </p>
+            )}
           </div>
+        ))}
+      </div>
 
-          <p className="mt-7 text-center text-xs text-stone-400">
-            © {new Date().getFullYear()} Artify. All rights reserved.
+      {/* About */}
+      <div className="mt-5">
+        <label className="text-sm text-[#B8A9C6]">About</label>
+
+        {isEditing ? (
+          <textarea
+            name="about"
+            value={formData.about}
+            onChange={changeHandler}
+            rows={3}
+            placeholder="Tell us something about yourself..."
+            className={inputClass}
+          />
+        ) : (
+          <p className="mt-2 text-sm text-[#F4EAF7]">
+            {formData.about || "No information added yet."}
           </p>
-        </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Login;
+export default PersonalDetails;

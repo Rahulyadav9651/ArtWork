@@ -33,16 +33,18 @@ const VerifyEmail = () => {
 
     const {
       firstName,
-      lastname,
+      lastName,
       email,
       password,
       confirmPassword,
     } = signupData;
 
+
+
     dispatch(
       Signup(
         firstName,
-        lastname,
+        lastName,
         email,
         password,
         confirmPassword,
