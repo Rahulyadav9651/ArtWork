@@ -16,6 +16,9 @@ const SettingsContent = () => {
 const dispatch= useDispatch();
 const navigate= useNavigate();
 const { token } = useSelector((state) => state.auth)
+const {artwork}= useSelector((state)=>state. art)
+//console.log("re", artwork)
+
 
   return (
     <div className=' min-h-screen w-full  text-[#F4EAF7] '>
@@ -99,15 +102,21 @@ const { token } = useSelector((state) => state.auth)
     <div className="mt-5 flex size-12 shrink-0 items-center justify-center rounded-full bg-[#49335D]">
       <Images size={30} />
     </div>
-    <div className="mt-5 flex min-w-0 flex-1 flex-col">
-      <p className="text-lg font-medium sm:text-xl">Total upload Image</p>
-      <p className="text-sm text-[#C9B5D8] sm:text-base">Manage</p>
+    <div className="mt-5 flex min-w-0 flex-1 flex-col gap-2">
+  <p className="text-sm font-medium text-[#B8A9C6] sm:text-base">
+    Total Uploaded Images
+  </p>
 
-      {/* <div className='flex w-47 h-11 rounded-full items-center justify-center gap-2 border border-[#C9B5D8] bg-[#49335D] mt-2.5 cursor-pointer'>
-        <p className='font-semibold'>Change Password</p>
-        <ArrowRight />
-      </div> */}
-    </div>
+  <div className="flex items-center gap-3">
+    <span className="text-3xl font-bold tracking-tight text-[#F4EAF7] sm:text-4xl">
+      {artwork?.length ?? 0}
+    </span>
+
+    <span className="rounded-full border border-[#B89ACB]/30 bg-[#493B59] px-3 py-1 text-xs font-medium text-[#D8C4E8]">
+      Uploaded
+    </span>
+  </div>
+</div>
   </div>
 </div>
 

@@ -33,7 +33,9 @@ const ArtworkContent = () => {
       try {
         const data = await dispatch(myArt(user._id, token))
         setMyartData(data || [])
-        setArtwork(data|| [])
+        dispatch(setArtwork(data || []));
+
+
       } catch (error) {
         console.error("Error fetching artwork:", error)
       }
