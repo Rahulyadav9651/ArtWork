@@ -22,5 +22,8 @@ reducers:{
 
 }
 
-
 })
+
+export const {setArtwork, setSelectedArtwork} = artSlice.actions
+
+export default artSlice.reducer

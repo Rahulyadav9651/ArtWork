@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Pencil, X, Save } from "lucide-react";
 import toast from "react-hot-toast";
 //import { updateProfile } from "../../services/opertions/profileAPI";
-
+import { updateProfile } from "../../services/opertions/authAPI";
 const inputClass =
   "mt-1 w-full rounded-lg border border-[#51445F] bg-[#211C2D] px-3 py-2 text-sm text-[#F4EAF7] outline-none transition focus:border-[#B89ACB] focus:ring-2 focus:ring-[#B89ACB]/20";
 
@@ -57,30 +57,35 @@ const ProfileContent = () => {
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error("First name and last name are required");
-      return;
+const handleSave = async () => {
+  if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    toast.error("First name and last name are required");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const success = await dispatch(
+      updateProfile(
+        {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+        },
+        token
+      )
+    );
+
+    if (success) {
+      setIsEditing(false);
     }
-
-    setLoading(true);
-    // const success = await dispatch(
-    //   updateProfile(
-    //     user._id,
-    //     {
-    //       firstName: formData.firstName.trim(),
-    //       lastName: formData.lastName.trim(),
-    //     },
-    //     token
-    //   )
-    // );
+  } finally {
     setLoading(false);
-
-    if (success) setIsEditing(false);
-  };
+  }
+};
 
   return (
-    <div className="w-full text-[#F4EAF7]">
+    <div className="w-4xl text-[#F4EAF7] fixed">
       {/* Page heading */}
       <p className="text-sm font-medium uppercase tracking-widest">
         Your Creative Space

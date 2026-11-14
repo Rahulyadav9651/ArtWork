@@ -5,7 +5,9 @@ import { ImSpinner9 } from "react-icons/im";
 import { setLoading, setToken } from "../../Slices/slice/Auth";
 import { setUser } from "../../Slices/slice/profileSlice";
 
-const {SEND_OTP_API,SIGNUP_API,LOGIN_API,RESET_TOKEN_API,RESETPASSWORD_API}= endPoints;
+const {SEND_OTP_API,SIGNUP_API,LOGIN_API,RESET_TOKEN_API,RESETPASSWORD_API, EDITP_PROFILE,
+    DELETE_USER
+}= endPoints;
 
 
 export function sendOtp(email,navigate){
@@ -212,3 +214,90 @@ dispatch(setLoading(false));
 }
 
 
+
+export function updateProfile(data, token) {
+  return async (dispatch) => {
+    const toastId = toast.loading("Updating profile...");
+
+    try {
+      const response = await apiConnector(
+        "PUT",
+        EDITP_PROFILE,
+        data,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+
+      toast.success("Profile updated successfully!");
+
+      // Update Redux profile state here using your profile slice action.
+      // Example: dispatch(setUser(response.data.user));
+
+      return true;
+
+    } catch (error) {
+      console.error("UPDATE PROFILE ERROR:", error);
+
+      toast.error(
+        error.response?.data?.message || "Profile update failed"
+      );
+
+      return false;
+
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+}
+
+
+
+export function deleteAccount(token, navigate) {
+  return async (dispatch) => {
+    const toastId = toast.loading("Deleting account...");
+
+    try {
+      const response = await apiConnector(
+        "DELETE",
+        DELETE_USER,
+        null,
+        {
+          Authorization: `Bearer ${token}`,
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+
+      toast.success("Account deleted successfully!");
+
+      // Clear authentication and profile Redux state here.
+      // Dispatch your logout action and clear persisted credentials.
+dispatch(setToken(null))
+dispatch(setUser(null))
+localStorage.removeItem("token")
+localStorage.removeItem("user")
+      navigate("/");
+
+      return true;
+
+    } catch (error) {
+      console.error("DELETE ACCOUNT ERROR:", error);
+
+      toast.error(
+        error.response?.data?.message || "Account deletion failed"
+      );
+
+      return false;
+
+    } finally {
+      toast.dismiss(toastId);
+    }
+  };
+}

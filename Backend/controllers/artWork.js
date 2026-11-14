@@ -3,7 +3,7 @@
 import Artwork , { CATEGORIES } from "../models/artWork.js";
 import { uploadImageToCloudinary } from "../utils/mailTemplate/imageUploader.js";
 import mongoose from "mongoose";
-
+import Comment from "../models/comment.js";
 
 const parseTags = (tags) => {
   if (!tags) return [];
@@ -500,53 +500,157 @@ console.error("getMyArtworks error:", error);
 }
 
 
-export const deleteArtwork = async(req, res)=>{
+// export const deleteArtwork = async(req, res)=>{
 
-try{
-  const userId= req.user._id;
+// try{
+//   const {id}= req.body
 
-  const deleteUser= await Artwork.findByIdAndDelete({artist:userId})
+//   const deleteUser= await Artwork.findOneAndDelete(id);
 
-  if(!deleteUser){
-return res.status(404).json({
+//   if(!deleteUser){
+// return res.status(404).json({
+//         success: false,
+//         message: "Artwork not found or you don't have permission to delete it",
+//       });
+
+//   }
+
+// //// Remove the artwork's comments
+//   await Comment.deleteMany({ artwork: id });
+
+// if (Artwork.imagePublicId) {
+//       try {
+//         await cloudinary.uploader.destroy(Artwork.imagePublicId);
+//       } catch (cloudError) {
+//         console.error("Cloudinary delete failed for", Artwork.imagePublicId, cloudError.message);
+//       }
+//     }
+
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Artwork deleted successfully",
+//       deletedId: userId,
+//     });
+
+
+
+// }
+// catch(error){
+//  console.error("deleteArtwork error:", error);
+//     return res.status(500).json(
+//       { 
+//         success: false,
+//        message: "Failed to delete artwork" 
+//       });
+
+// }
+
+// }
+
+
+export const deleteArtwork = async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    // Validate artwork ID
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
         success: false,
-        message: "Artwork not found or you don't have permission to delete it",
+        message: "Invalid artwork ID",
       });
-
-  }
-
-//// Remove the artwork's comments
-  await Comment.deleteMany({ artwork: userId });
-
-if (Artwork.imagePublicId) {
-      try {
-        await cloudinary.uploader.destroy(Artwork.imagePublicId);
-      } catch (cloudError) {
-        console.error("Cloudinary delete failed for", Artwork.imagePublicId, cloudError.message);
-      }
     }
 
+    // Find and delete artwork
+    const deletedArtwork = await Artwork.findByIdAndDelete(id);
+
+    if (!deletedArtwork) {
+      return res.status(404).json({
+        success: false,
+        message: "Artwork not found",
+      });
+    }
+
+    // Delete associated comments
+    await Comment.deleteMany({ artwork: id });
+
+    // Delete artwork image from Cloudinary
+    if (deletedArtwork.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(
+          deletedArtwork.imagePublicId
+        );
+      } catch (cloudError) {
+        console.error(
+          "Cloudinary delete failed:",
+          cloudError.message
+        );
+      }
+    }
 
     return res.status(200).json({
       success: true,
       message: "Artwork deleted successfully",
-      deletedId: userId,
+      deletedId: deletedArtwork._id,
     });
 
+  } catch (error) {
+    console.error("deleteArtwork error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete artwork",
+    });
+  }
+};
 
 
-}
-catch(error){
- console.error("deleteArtwork error:", error);
-    return res.status(500).json(
-      { 
+
+export const getArtId = async (req, res) => {
+  try {
+    const { id } = req.params; // Get ID from URL
+
+    if (!id) {
+      return res.status(400).json({
         success: false,
-       message: "Failed to delete artwork" 
+        message: "Please provide artwork ID",
       });
+    }
 
-}
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid artwork ID",
+      });
+    }
+
+    const art = await Artwork.findById(id).select(
+      "title description category imageUrl artist tags likes"
+    );
+
+    if (!art) {
+      return res.status(404).json({
+        success: false,
+        message: "Artwork not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: art,
+      message: "Artwork fetched successfully",
+    });
+
+  } catch (error) {
+    console.error("getArtId error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch artwork",
+    });
+  }
+};
 
 
-}
 
-
+;

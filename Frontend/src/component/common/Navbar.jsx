@@ -141,9 +141,9 @@ const navlink = [
 const Navbar = () => {
   const { token } = useSelector((state) => state.auth);
   const [isOpen, setIsOpen] = useState(false);
-
+//console.log("ds",token)
   return (
-    <header className="sticky top-0  w-full border-b border-stone-200 bg-[#faf8f4]/95 shadow-sm backdrop-blur-md">
+    <header className=" top-0  w-full border-b border-stone-200 bg-[#faf8f4]/95 shadow-sm backdrop-blur-md">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
 
         {/* Logo */}

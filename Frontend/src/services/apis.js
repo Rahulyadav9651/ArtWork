@@ -7,7 +7,9 @@ export const endPoints={
     LOGIN_API:BASE_URL+"/login",
     CHANGE_PASSWORD:BASE_URL+"/changepassword",
     RESET_TOKEN_API:BASE_URL+"/reset-password-token",
-    RESETPASSWORD_API:BASE_URL+"/reset-password"
+    RESETPASSWORD_API:BASE_URL+"/reset-password",
+    EDITP_PROFILE:BASE_URL+"/edit-profile",
+    DELETE_USER:BASE_URL+"/delete-account"
 
 }
 
@@ -15,9 +17,10 @@ export const artWorkendPoints={
 CREATE_ART:BASE_URL+"/create",
 LATEST_ART:BASE_URL+"/latest",
 CATEGORY_ART:BASE_URL+"/category",
-EDIT_ART:BASE_URL+"/artwork/:artworkId",
+EDIT_ART:BASE_URL+"/artwork",
 GETMY_ART:BASE_URL+"/my-artworks",
-DELETE_ART:BASE_URL+"/delete-art"
+DELETE_ART:BASE_URL+"/delete-art",
+GETARTBYID:BASE_URL+"/get-art",
 
 }
 

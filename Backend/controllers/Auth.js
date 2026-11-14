@@ -6,6 +6,8 @@ import jwt from "jsonwebtoken";
 import otpGenerator from "otp-generator";
 import { passwordUpdated } from "../utils/mailTemplate/passwordChange.js";
 import mailSender from "../utils/mailSender.js";
+import Artwork from "../models/artWork.js";
+import Comment from "../models/comment.js";
 
 
 export const Signup= async (req, res)=>{
@@ -293,3 +295,148 @@ console.error("Error occurred while sending email:", error);
 			});
     }
 }
+
+
+
+export const editProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { firstName, lastName } = req.body;
+
+    // Validate fields
+    if (!firstName?.trim() || !lastName?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "First name and last name are required",
+      });
+    }
+
+    // Update user
+    const updateUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+
+    if (!updateUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updateUser,
+    });
+
+  } catch (error) {
+    console.error("EDIT PROFILE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Profile could not be updated. Please try again.",
+    });
+  }
+};
+
+
+
+export const deleteUser = async (req, res) => {
+  try {
+    // Get authenticated user's ID
+    const userId = req.user._id;
+
+    // Find user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Find all artwork uploaded by this user
+    const artworks = await Artwork.find({ artist: userId })
+      .select("_id imagePublicId");
+
+    // Get artwork IDs
+    const artworkIds = artworks.map((art) => art._id);
+
+    // Collect Cloudinary image IDs
+    const imagePublicIds = artworks
+      .map((art) => art.imagePublicId)
+      .filter(Boolean);
+
+    // Delete comments:
+    // 1. Comments written by this user
+    // 2. Comments on this user's artwork
+    await Comment.deleteMany({
+      $or: [
+        { user: userId },
+        { artwork: { $in: artworkIds } },
+      ],
+    });
+
+    // Delete likes:
+    // 1. Likes given by this user
+    // 2. Likes on this user's artwork
+    // await Like.deleteMany({
+    //   $or: [
+    //     { user: userId },
+    //     { artwork: { $in: artworkIds } },
+    //   ],
+    // });
+
+    // Delete user's artwork
+    await Artwork.deleteMany({ artist: userId });
+
+    // Delete user's saved artwork references
+    // Adjust field name according to your User schema
+    await User.updateMany(
+      { savedArtwork: userId },
+      { $pull: { savedArtwork: { $in: artworkIds } } }
+    );
+
+    // Delete user account
+    await User.findByIdAndDelete(userId);
+
+    // Delete images from Cloudinary
+    const cloudinaryResults = await Promise.allSettled(
+      imagePublicIds.map((publicId) =>
+        cloudinary.uploader.destroy(publicId)
+      )
+    );
+
+    const failedImages = cloudinaryResults.filter(
+      (result) => result.status === "rejected"
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Account and associated data deleted successfully",
+      deletedArtworkCount: artworkIds.length,
+      cloudinaryCleanupFailed: failedImages.length,
+    });
+
+  } catch (error) {
+    console.error("DELETE USER ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Account could not be deleted. Please try again.",
+    });
+  }
+}
+
+
